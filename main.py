@@ -5,6 +5,11 @@ from openai import OpenAI
 import argparse
 import uuid
 import shutil
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 
 def extract_audio(video_path, audio_path):
     """Extrai o áudio completo de um vídeo usando FFmpeg."""
@@ -49,11 +54,40 @@ def summarize_text(text, api_key):
                 "content": "Interpret the following text extracted from a video transcription:\n\n" + text,
             }
         ],
-        model="gpt-4o",
+        model="gpt-3.5-turbo",
     )
     summary = response.choices[0].message.content
 
     return summary
+
+def send_email(subject, body, to_email, files):
+    """Envia um e-mail com os arquivos anexados."""
+    from_email = "emaill@gmail.com"
+    from_password = "password"
+
+    msg = MIMEMultipart()
+    msg['From'] = from_email
+    msg['To'] = to_email
+    msg['Subject'] = subject
+
+    msg.attach(MIMEText(body, 'plain'))
+
+    for file in files:
+        attachment = open(file, "rb")
+
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload((attachment).read())
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition', "attachment; filename= " + os.path.basename(file))
+
+        msg.attach(part)
+
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.starttls()
+    server.login(from_email, from_password)
+    text = msg.as_string()
+    server.sendmail(from_email, to_email, text)
+    server.quit()
 
 def main(api_key, video_filename):
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -84,6 +118,14 @@ def main(api_key, video_filename):
     summary_path = os.path.join(output_subdir, f"{base_name}_summary.txt")
     save_transcription(summary_text, summary_path)
     print(f"Resumo salvo em: {summary_path}")
+
+    # Enviar o e-mail com os arquivos anexados
+    send_email(
+        subject="Transcrição e Resumo",
+        body="Segue em anexo a transcrição completa e o resumo.",
+        to_email="contato.danilo.paixao@gmail.com",
+        files=[transcription_path, summary_path]
+    )
     
     # Remover o arquivo de áudio temporário e o diretório temporário
     shutil.rmtree(tmp_subdir)
