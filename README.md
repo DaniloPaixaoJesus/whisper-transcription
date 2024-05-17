@@ -27,7 +27,8 @@ Este projeto tem como objetivo extrair o áudio de um vídeo, transcrever o áud
 source venv/bin/activate  # No Windows, use: venv\Scripts\activate
 
 ### Execucao
-python main.py
+linux - python main.py some-token-open-api-code
+win - py main.py some-token-open-api-code
 
 ### Bibliotecas Utilizadas
  - subprocess: Usada para chamar comandos do sistema (neste caso, para executar o FFmpeg).
