@@ -17,15 +17,20 @@ def extract_audio(video_path, audio_path):
     ])
 
 def transcribe_audio(audio_path, language="portuguese"):
-    """Transcreve o áudio usando o modelo Whisper."""
+    """Transcreve o áudio usando o modelo Whisper e adiciona quebras de linha para separar diálogos."""
     # Carregar o modelo Whisper
     model = whisper.load_model("base")
     
-    # Transcrever o áudio extraído
+    # Transcrever o áudio extraído com segmentação
     result = model.transcribe(audio_path, language=language)
     
-    # Extrair o texto transcrito
-    return result['text']
+    # Construir o texto com separação de diálogos
+    segments = result['segments']
+    transcribed_text = ""
+    for segment in segments:
+        transcribed_text += segment['text'] + "\n\n"
+
+    return transcribed_text.strip()
 
 def save_transcription(text, text_path):
     """Salva o texto transcrito em um arquivo."""
