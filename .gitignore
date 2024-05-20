@@ -1,6 +1,6 @@
 __pycache__/
 *.pyc
-app/files/*
+app/results/*
 app/tmp/*
 *.mp4
 *.wav

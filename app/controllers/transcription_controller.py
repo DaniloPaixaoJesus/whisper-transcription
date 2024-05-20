@@ -1,5 +1,5 @@
 from fastapi import APIRouter, BackgroundTasks
-from app.services.transcription_service import process_transcription, process_transcription_from_url
+from app.services.transcription_service import process_transcription
 from app.models.transcription_request import TranscriptionRequest
 from app.models.transcription_response import TranscriptionResponse
 import uuid

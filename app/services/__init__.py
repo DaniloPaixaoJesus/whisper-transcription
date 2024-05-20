@@ -2,8 +2,7 @@
 from app.services.transcription_service import (
     extract_audio,
     transcribe_audio,
-    save_transcription,
+    save_file_transcription,
     summarize_text,
-    process_transcription,
-    process_transcription_from_url
+    process_transcription
 )

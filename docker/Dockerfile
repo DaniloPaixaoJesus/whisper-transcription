@@ -16,6 +16,9 @@ COPY . .
 # Create necessary directories
 RUN mkdir -p app/files app/tmp
 
+# Copy the LocalStack setup script
+# COPY docker/setup_localstack.sh /docker-entrypoint-initaws.d/
+
 # Set environment variables (replace with your actual values or pass them through the Docker run command)
 ENV API_KEY="your_openai_api_key"
 ENV FROM_EMAIL="your_email@example.com"

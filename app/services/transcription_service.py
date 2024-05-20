@@ -7,8 +7,8 @@ from openai import OpenAI
 from app.config.config import get_config
 from app.utils.email_utils import send_email
 from app.utils.download_utils import download_video
-# from app.utils.s3_utils import upload_to_s3
-# from app.utils.mongodb_utils import init_transcription, update_transcription_status
+#from app.utils.s3_utils import upload_to_s3
+#from app.utils.mongodb_utils import init_transcription, update_transcription_status
 
 def extract_audio(video_path, audio_path):
     """Extracts the complete audio from a video using FFmpeg."""
@@ -33,7 +33,7 @@ def transcribe_audio(audio_path, language):
 
     return transcribed_text.strip()
 
-def save_transcription(text, text_path):
+def save_file_transcription(text, text_path):
     """Saves the transcribed text to a file."""
     with open(text_path, 'w', encoding='utf-8') as file:
         file.write(text)
@@ -56,21 +56,30 @@ def summarize_text(text, api_key, language):
 
 def process_transcription(video_filename, language):
     config = get_config()
-    api_key = config['api_key']
+    open_api_key = config['api_key']
     
-    script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    video_path = os.path.join(script_dir, '', video_filename)
+    app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    video_path = os.path.join(app_dir, '', video_filename)
     
     base_name = os.path.splitext(video_filename)[0]
     unique_id = str(uuid.uuid4())
-    transcription_filename = f"{base_name}.txt"
-    summary_filename = f"{base_name}_summary.txt"
-    output_subdir = os.path.join(script_dir, "", "files", f"{base_name}_{unique_id}")
-    tmp_subdir = os.path.join(script_dir, "", "tmp", f"{base_name}_{unique_id}")
-    os.makedirs(output_subdir, exist_ok=True)
-    os.makedirs(tmp_subdir, exist_ok=True)
+
+    transcription_filename = f"{base_name}_full_transcription_{unique_id}.txt"
+    summary_filename = f"{base_name}_summary_{unique_id}.txt"
+
+    output_transcriptions_dir = os.path.join(app_dir, "results", "transcriptions")
+    output_summaries_dir = os.path.join(app_dir, "results", "summaries")
+    tmp_dir = os.path.join(app_dir, "tmp")
+
+
+    output_subdir = os.path.join(app_dir, "", "files", f"{base_name}_{unique_id}")
+    tmp_subdir = os.path.join(app_dir, "", "tmp", f"{base_name}_{unique_id}")
     
-    audio_path = os.path.join(tmp_subdir, f"{base_name}.wav")
+    os.makedirs(output_transcriptions_dir, exist_ok=True)
+    os.makedirs(output_summaries_dir, exist_ok=True)
+    os.makedirs(tmp_dir, exist_ok=True)
+    
+    audio_path = os.path.join(tmp_dir, f"{base_name}_{unique_id}.wav")
     
     # Initialize transcription record in MongoDB
     # init_transcription(unique_id, video_filename, transcription_filename, summary_filename)
@@ -82,17 +91,17 @@ def process_transcription(video_filename, language):
     transcribed_text = transcribe_audio(audio_path, language)
     
     # Path to save the complete transcription
-    transcription_path = os.path.join(output_subdir, transcription_filename)
-    save_transcription(transcribed_text, transcription_path)
+    transcription_path = os.path.join(output_transcriptions_dir, transcription_filename)
+    save_file_transcription(transcribed_text, transcription_path)
     print(f"Complete transcription saved to: {transcription_path}")
     
     # Upload transcription to S3
     # upload_to_s3(transcription_path, "full-transcriptions", transcription_filename)
     
     # Generate and save the summary of the transcribed text
-    summary_text = summarize_text(transcribed_text, api_key, language)
-    summary_path = os.path.join(output_subdir, summary_filename)
-    save_transcription(summary_text, summary_path)
+    summary_text = summarize_text(transcribed_text, open_api_key, language)
+    summary_path = os.path.join(output_summaries_dir, summary_filename)
+    save_file_transcription(summary_text, summary_path)
     print(f"Summary saved to: {summary_path}")
 
     # Upload summary to S3
@@ -110,81 +119,6 @@ def process_transcription(video_filename, language):
     # Update transcription status to FINISHED
     # update_transcription_status(unique_id, "FINISHED")
     
-    # Remove the temporary audio file and directory
-    shutil.rmtree(tmp_subdir)
-    print(f"Temporary directory {tmp_subdir} removed.")
-
-
-
-
-
-
-
-
-
-
-"""
-def process_transcription_from_url(url, language):
-    config = get_config()
-    api_key = config['api_key']
-    
-    script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    unique_id = str(uuid.uuid4())
-    video_filename = f"downloaded_{unique_id}.mp4"
-    video_path = os.path.join(script_dir, "", video_filename)
-    
-    base_name = os.path.splitext(video_filename)[0]
-    transcription_filename = f"{base_name}.txt"
-    summary_filename = f"{base_name}_summary.txt"
-    output_subdir = os.path.join(script_dir, "", "files", f"{base_name}_{unique_id}")
-    tmp_subdir = os.path.join(script_dir, "", "tmp", f"{base_name}_{unique_id}")
-    os.makedirs(output_subdir, exist_ok=True)
-    os.makedirs(tmp_subdir, exist_ok=True)
-    
-    # Initialize transcription record in MongoDB
-    # init_transcription(unique_id, video_filename, transcription_filename, summary_filename)
-    
-    # Download the video
-    download_video(url, video_path)
-    
-    audio_path = os.path.join(tmp_subdir, f"{base_name}.wav")
-    
-    # Extract the complete audio from the video
-    extract_audio(video_path, audio_path)
-    
-    # Transcribe the complete audio
-    transcribed_text = transcribe_audio(audio_path, language)
-    
-    # Path to save the complete transcription
-    transcription_path = os.path.join(output_subdir, transcription_filename)
-    save_transcription(transcribed_text, transcription_path)
-    print(f"Complete transcription saved to: {transcription_path}")
-    
-    # Upload transcription to S3
-    # upload_to_s3(transcription_path, "full-transcriptions", transcription_filename)
-    
-    # Generate and save the summary of the transcribed text
-    summary_text = summarize_text(transcribed_text, api_key, language)
-    summary_path = os.path.join(output_subdir, summary_filename)
-    save_transcription(summary_text, summary_path)
-    print(f"Summary saved to: {summary_path}")
-
-    # Upload summary to S3
-    # upload_to_s3(summary_path, "summary-transcriptions", summary_filename)
-
-    # Send the email with the attached files
-    send_email(
-        subject="Transcription and Summary",
-        body="Attached are the complete transcription and summary.",
-        to_email="danilo.oficial@gmail.com",
-        files=[transcription_path, summary_path],
-        config=config
-    )
-    
-    # Update transcription status to FINISHED
-    #update_transcription_status(unique_id, "FINISHED")
-    
-    # Remove the temporary audio file and directory
-    shutil.rmtree(tmp_subdir)
-    print(f"Temporary directory {tmp_subdir} removed.")
-"""
+    # Remove the temporary audio file
+    os.remove(audio_path)
+    print(f"Temporary audio file {audio_path} removed.")
