@@ -46,3 +46,45 @@ docker run -d -p 8000:8000 --name transcription-app \
   -e FROM_EMAIL=your_email@example.com \
   -e FROM_PASSWORD=your_email_password \
   transcription-app
+
+docker-compose up --build
+
+
+transcription_app/
+│
+├── app/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── files/             # Output files directory
+│   ├── tmp/               # Temporary files directory
+│   ├── config/
+│   │   ├── __init__.py
+│   │   └── config.py
+│   ├── controllers/
+│   │   ├── __init__.py
+│   │   └── transcription_controller.py
+│   ├── services/
+│   │   ├── __init__.py
+│   │   └── transcription_service.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── transcription_request.py
+│   │   └── transcription_response.py
+│   └── utils/
+│       ├── __init__.py
+│       ├── email_utils.py
+│       ├── download_utils.py
+│       ├── s3_utils.py
+│       └── mongodb_utils.py
+│
+├── tests/
+│   ├── __init__.py
+│   ├── test_transcription_service.py
+│   └── test_transcription_controller.py
+│
+├── docker/
+│   └── Dockerfile
+│
+├── docker-compose.yml     # Docker Compose configuration file
+├── requirements.txt
+└── README.md
