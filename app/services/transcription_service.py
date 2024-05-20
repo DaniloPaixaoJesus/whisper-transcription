@@ -7,6 +7,7 @@ from openai import OpenAI
 from app.config.config import get_config
 from app.utils.email_utils import send_email
 from app.utils.download_utils import download_video
+from app.utils.s3_utils import upload_to_s3
 
 def extract_audio(video_path, audio_path):
     """Extracts the complete audio from a video using FFmpeg."""
@@ -81,11 +82,17 @@ def process_transcription(video_filename, language):
     save_transcription(transcribed_text, transcription_path)
     print(f"Complete transcription saved to: {transcription_path}")
     
+    # Upload transcription to S3
+    upload_to_s3(transcription_path, "full-transcriptions", f"{base_name}.txt")
+    
     # Generate and save the summary of the transcribed text
     summary_text = summarize_text(transcribed_text, api_key, language)
     summary_path = os.path.join(output_subdir, f"{base_name}_summary.txt")
     save_transcription(summary_text, summary_path)
     print(f"Summary saved to: {summary_path}")
+
+    # Upload summary to S3
+    upload_to_s3(summary_path, "summary-transcriptions", f"{base_name}_summary.txt")
 
     # Send the email with the attached files
     send_email(
@@ -131,11 +138,17 @@ def process_transcription_from_url(url, language):
     save_transcription(transcribed_text, transcription_path)
     print(f"Complete transcription saved to: {transcription_path}")
     
+    # Upload transcription to S3
+    upload_to_s3(transcription_path, "full-transcriptions", f"{base_name}.txt")
+    
     # Generate and save the summary of the transcribed text
     summary_text = summarize_text(transcribed_text, api_key, language)
     summary_path = os.path.join(output_subdir, f"{base_name}_summary.txt")
     save_transcription(summary_text, summary_path)
     print(f"Summary saved to: {summary_path}")
+
+    # Upload summary to S3
+    upload_to_s3(summary_path, "summary-transcriptions", f"{base_name}_summary.txt")
 
     # Send the email with the attached files
     send_email(

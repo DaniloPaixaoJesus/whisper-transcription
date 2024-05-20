@@ -5,3 +5,4 @@ whisper
 pydantic
 pytest
 requests
+boto3
