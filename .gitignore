@@ -1,5 +1,7 @@
-__pycache__
-files/*
+__pycache__/
+*.pyc
+app/files/*
+app/tmp/*
 *.mp4
 *.wav
 *.mkv
