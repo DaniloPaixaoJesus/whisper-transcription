@@ -10,23 +10,24 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
+from config import get_config
 
 def extract_audio(video_path, audio_path):
-    """Extrai o áudio completo de um vídeo usando FFmpeg."""
+    """Extracts the complete audio from a video using FFmpeg."""
     if subprocess.run(["ffmpeg", "-version"]).returncode != 0:
-        raise EnvironmentError("FFmpeg não está instalado ou não está no PATH do sistema.")
+        raise EnvironmentError("FFmpeg is not installed or not in the system PATH.")
     
     subprocess.run([
         "ffmpeg", "-i", video_path, "-q:a", "0", "-map", "a", audio_path,
         "-y"  # Overwrite output files without asking
     ])
 
-def transcribe_audio(audio_path, language="portuguese"):
-    """Transcreve o áudio usando o modelo Whisper."""
+def transcribe_audio(audio_path, language):
+    """Transcribes audio using the Whisper model."""
     model = whisper.load_model("base")
     result = model.transcribe(audio_path, language=language)
     
-    # Construir o texto com separação de diálogos
+    # Build the text with dialogue separation
     segments = result['segments']
     transcribed_text = ""
     for segment in segments:
@@ -35,35 +36,37 @@ def transcribe_audio(audio_path, language="portuguese"):
     return transcribed_text.strip()
 
 def save_transcription(text, text_path):
-    """Salva o texto transcrito em um arquivo."""
+    """Saves the transcribed text to a file."""
     with open(text_path, 'w', encoding='utf-8') as file:
         file.write(text)
 
 def remove_file(file_path):
-    """Remove o arquivo especificado."""
+    """Removes the specified file."""
     if os.path.exists(file_path):
         os.remove(file_path)
 
-def summarize_text(text, api_key):
-    """Resume o texto usando a API do OpenAI."""
+def summarize_text(text, api_key, language):
+    """Summarizes the text using the OpenAI API."""
     client = OpenAI(api_key=api_key)
     response = client.chat.completions.create(
         messages=[
             {
                 "role": "user",
-                "content": "Interpret the following text extracted from a video transcription:\n\n" + text,
+                "content": f"Summarize the following text in {language}:\n\n" + text,
             }
         ],
-        model="gpt-3.5-turbo",
+        model="gpt-4",
     )
     summary = response.choices[0].message.content
 
     return summary
 
-def send_email(subject, body, to_email, files):
-    """Envia um e-mail com os arquivos anexados."""
-    from_email = "emaill@gmail.com"
-    from_password = "password"
+def send_email(subject, body, to_email, files, config):
+    """Sends an email with the attached files."""
+    from_email = config['from_email']
+    from_password = config['from_password']
+    smtp_server = config['smtp_server']
+    smtp_port = config['smtp_port']
 
     msg = MIMEMultipart()
     msg['From'] = from_email
@@ -82,14 +85,17 @@ def send_email(subject, body, to_email, files):
 
         msg.attach(part)
 
-    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server = smtplib.SMTP(smtp_server, smtp_port)
     server.starttls()
     server.login(from_email, from_password)
     text = msg.as_string()
     server.sendmail(from_email, to_email, text)
     server.quit()
 
-def main(api_key, video_filename):
+def main(video_filename, language):
+    config = get_config()
+    api_key = config['api_key']
+    
     script_dir = os.path.dirname(os.path.abspath(__file__))
     video_path = os.path.join(script_dir, video_filename)
     
@@ -102,38 +108,39 @@ def main(api_key, video_filename):
     
     audio_path = os.path.join(tmp_subdir, f"{base_name}.wav")
     
-    # Extrair o áudio completo do vídeo
+    # Extract the complete audio from the video
     extract_audio(video_path, audio_path)
     
-    # Transcrever o áudio completo
-    transcribed_text = transcribe_audio(audio_path)
+    # Transcribe the complete audio
+    transcribed_text = transcribe_audio(audio_path, language)
     
-    # Caminho para salvar a transcrição completa
+    # Path to save the complete transcription
     transcription_path = os.path.join(output_subdir, f"{base_name}.txt")
     save_transcription(transcribed_text, transcription_path)
-    print(f"Transcrição completa salva em: {transcription_path}")
+    print(f"Complete transcription saved to: {transcription_path}")
     
-    # Gerar e salvar o resumo do texto transcrito
-    summary_text = summarize_text(transcribed_text, api_key)
+    # Generate and save the summary of the transcribed text
+    summary_text = summarize_text(transcribed_text, api_key, language)
     summary_path = os.path.join(output_subdir, f"{base_name}_summary.txt")
     save_transcription(summary_text, summary_path)
-    print(f"Resumo salvo em: {summary_path}")
+    print(f"Summary saved to: {summary_path}")
 
-    # Enviar o e-mail com os arquivos anexados
+    # Send the email with the attached files
     send_email(
-        subject="Transcrição e Resumo",
-        body="Segue em anexo a transcrição completa e o resumo.",
-        to_email="contato.danilo.paixao@gmail.com",
-        files=[transcription_path, summary_path]
+        subject="Transcription and Summary",
+        body="Attached are the complete transcription and summary.",
+        to_email="danilo.oficial@gmail.com",
+        files=[transcription_path, summary_path],
+        config=config
     )
     
-    # Remover o arquivo de áudio temporário e o diretório temporário
+    # Remove the temporary audio file and directory
     shutil.rmtree(tmp_subdir)
-    print(f"Diretório temporário {tmp_subdir} removido.")
+    print(f"Temporary directory {tmp_subdir} removed.")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Transcrever e resumir o áudio de um vídeo.")
-    parser.add_argument("api_key", help="Chave da API do OpenAI")
-    parser.add_argument("video_filename", help="Nome do arquivo de vídeo")
+    parser = argparse.ArgumentParser(description="Transcribe and summarize the audio from a video.")
+    parser.add_argument("video_filename", help="Name of the video file")
+    parser.add_argument("language", help="Language of the transcription and summary")
     args = parser.parse_args()
-    main(args.api_key, args.video_filename)
+    main(args.video_filename, args.language)
