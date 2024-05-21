@@ -9,7 +9,7 @@ COPY requirements.txt .
 
 # Install the dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install -U openai-whisper 
+RUN pip install -U openai-whisper==20231117
 
 # Copy the entire project to the container
 COPY . .
