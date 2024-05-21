@@ -55,12 +55,24 @@ services:
     ports:
       - "4566:4566"
       - "4571:4571"
-    command: awslocal sqs create-queue --queue-name transcription-queue
     environment:
       - SERVICES=s3,sqs
       - DEFAULT_REGION=us-east-1
     volumes:
+      - ./src/teste.mkv:/teste.mkv
       - localstack_data:/var/lib/localstack
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        docker-entrypoint.sh &
+        until awslocal s3 mb s3://transcription-bucket; do
+          echo "Waiting for LocalStack to be ready..."
+          sleep 2
+        done
+        awslocal s3api put-object --bucket transcription-bucket --key teste.mkv --body /teste.mkv
+        awslocal sqs create-queue --queue-name transcription-queue
+        wait
 
 volumes:
   mongo_data:
