@@ -48,3 +48,15 @@ def get_aws_clients(provider, region, access_key, secret_key):
             aws_secret_access_key=secret_key
         )
     return sqs_client, s3_client
+
+def upload_to_s3(s3_client, file_path, bucket_name, bucket_key):
+    s3_client.upload_file(file_path, bucket_name, bucket_key)
+    print(f"Uploaded {file_path} to s3://{bucket_name}/{bucket_key}")
+
+def generate_presigned_url(s3_client, bucket_name, bucket_key, expiration=3600):
+    url = s3_client.generate_presigned_url(
+        'get_object',
+        Params={'Bucket': bucket_name, 'Key': bucket_key},
+        ExpiresIn=expiration
+    )
+    return url

@@ -7,8 +7,7 @@ from openai import OpenAI
 from src.config.config import get_config
 from src.utils.email_utils import send_email
 from src.utils.download_utils import download_video
-#from app.utils.s3_utils import upload_to_s3
-#from app.utils.mongodb_utils import init_transcription, update_transcription_status
+from src.aws.aws_utils import upload_to_s3, generate_presigned_url, get_aws_clients
 
 def extract_audio(video_path, audio_path):
     """Extracts the complete audio from a video using FFmpeg."""
@@ -92,6 +91,12 @@ def summarize_text(text, api_key, language):
 
 def process_transcription(video_filename, language):
     try:
+        provider = os.getenv('PROVIDER', 'localstack')
+        aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID', 'test')
+        aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY', 'test')
+        aws_region = os.getenv('AWS_REGION', 'us-east-1')
+        sqs_client, s3_client = get_aws_clients(provider, aws_region, aws_access_key_id, aws_secret_access_key)
+
         config = get_config()
         open_api_key = config['api_key']
         
@@ -108,9 +113,6 @@ def process_transcription(video_filename, language):
         output_summaries_dir = os.path.join(app_dir, "results", "summaries")
         tmp_dir = os.path.join(app_dir, "tmp")
 
-        output_subdir = os.path.join(app_dir, "", "files", f"{base_name}_{unique_id}")
-        tmp_subdir = os.path.join(app_dir, "", "tmp", f"{base_name}_{unique_id}")
-        
         os.makedirs(output_transcriptions_dir, exist_ok=True)
         os.makedirs(output_summaries_dir, exist_ok=True)
         os.makedirs(tmp_dir, exist_ok=True)
@@ -131,23 +133,30 @@ def process_transcription(video_filename, language):
         save_file_transcription(transcribed_text, transcription_path)
         print(f"Complete transcription saved to: {transcription_path}")
         
-        # Upload transcription to S3
-        # upload_to_s3(transcription_path, "full-transcriptions", transcription_filename)
-        
         # Generate and save the summary of the transcribed text
         summary_text = summarize_text(transcribed_text, open_api_key, language)
         summary_path = os.path.join(output_summaries_dir, summary_filename)
         save_file_transcription(summary_text, summary_path)
         print(f"Summary saved to: {summary_path}")
 
-        # Upload summary to S3
-        # upload_to_s3(summary_path, "summary-transcriptions", summary_filename)
+        # Upload transcription and summary to S3
+        upload_to_s3(s3_client, transcription_path, "transcription-bucket", f"full-transcriptions/{transcription_filename}")
+        upload_to_s3(s3_client, summary_path, "transcription-bucket", f"summary-transcriptions/{summary_filename}")
 
-        # Send the email with the attached files
+        # Generate pre-signed URLs
+        transcription_url = generate_presigned_url(s3_client, "transcription-bucket", f"full-transcriptions/{transcription_filename}")
+        summary_url = generate_presigned_url(s3_client, "transcription-bucket", f"summary-transcriptions/{summary_filename}")
+
+       # Send the email with the pre-signed URLs
+        email_body = f"Attached are the complete transcription and summary.\n\n" \
+                     f"Transcription: {transcription_url}\n" \
+                     f"Summary: {summary_url}"
+        
         send_email(
             subject="Transcription and Summary",
-            body="Attached are the complete transcription and summary.",
+            body=email_body,
             to_email="danilo.oficial@gmail.com",
+            #files=[],
             files=[transcription_path, summary_path],
             config=config
         )

@@ -72,6 +72,7 @@ services:
         done
         awslocal s3api put-object --bucket transcription-bucket --key teste.mkv --body /teste.mkv
         awslocal sqs create-queue --queue-name transcription-queue
+        awslocal sqs send-message --queue-url http://localhost:4566/000000000000/transcription-queue --message-body '{"id":"a3b23f64-46f0-45c8-a62f-d1e9476a1ce2", "file-name":"teste.mkv", "bucket-name": "transcription-bucket", "bucket-key": "teste.mkv"}'
         wait
 
 volumes:
