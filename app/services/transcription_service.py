@@ -37,22 +37,58 @@ def save_file_transcription(text, text_path):
     """Saves the transcribed text to a file."""
     with open(text_path, 'w', encoding='utf-8') as file:
         file.write(text)
+# CHECK
+# https://platform.openai.com/docs/guides/speech-to-text/improving-reliability
 
-def summarize_text(text, api_key, language):
-    """Summarizes the text using the OpenAI API."""
+
+def split_text(text, max_tokens):
+    """Splits text into smaller chunks based on max_tokens limit."""
+    words = text.split()
+    chunks = []
+    current_chunk = []
+    current_length = 0
+
+    for word in words:
+        if current_length + len(word) + 1 > max_tokens:
+            chunks.append(' '.join(current_chunk))
+            current_chunk = [word]
+            current_length = len(word) + 1
+        else:
+            current_chunk.append(word)
+            current_length += len(word) + 1
+
+    if current_chunk:
+        chunks.append(' '.join(current_chunk))
+
+    return chunks
+
+def summarize_text_chunk(chunk, api_key, language):
+    """Summarizes a chunk of text using the OpenAI API."""
     client = OpenAI(api_key=api_key)
     response = client.chat.completions.create(
         messages=[
             {
                 "role": "user",
-                "content": f"Summarize the following text in {language}:\n\n" + text,
+                "content": f"Summarize the following text in {language}:\n\n" + chunk,
             }
         ],
         model="gpt-4",
     )
     summary = response.choices[0].message.content
-
     return summary
+
+def summarize_text(text, api_key, language):
+    """Summarizes the text using the OpenAI API by splitting it into smaller chunks."""
+    max_tokens = 9000  # Adjust this value based on the token limit
+    chunks = split_text(text, max_tokens)
+    summaries = []
+
+    for chunk in chunks:
+        summary = summarize_text_chunk(chunk, api_key, language)
+        summaries.append(summary)
+
+    final_summary = "\n\n".join(summaries)
+    return final_summary
 
 def process_transcription(video_filename, language):
     config = get_config()
@@ -70,7 +106,6 @@ def process_transcription(video_filename, language):
     output_transcriptions_dir = os.path.join(app_dir, "results", "transcriptions")
     output_summaries_dir = os.path.join(app_dir, "results", "summaries")
     tmp_dir = os.path.join(app_dir, "tmp")
-
 
     output_subdir = os.path.join(app_dir, "", "files", f"{base_name}_{unique_id}")
     tmp_subdir = os.path.join(app_dir, "", "tmp", f"{base_name}_{unique_id}")

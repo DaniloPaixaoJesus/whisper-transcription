@@ -1,5 +1,5 @@
 # Use the official Python image from the Docker Hub
-FROM python:3.9
+FROM python:3.12
 
 # Set the working directory
 WORKDIR /app
@@ -9,12 +9,17 @@ COPY requirements.txt .
 
 # Install the dependencies
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -U openai-whisper 
 
 # Copy the entire project to the container
 COPY . .
 
 # Create necessary directories
-RUN mkdir -p app/files app/tmp
+RUN mkdir -p app/results app/tmp
+
+RUN apt-get -y update
+RUN apt-get -y upgrade
+RUN apt-get install -y ffmpeg
 
 # Copy the LocalStack setup script
 # COPY docker/setup_localstack.sh /docker-entrypoint-initaws.d/
