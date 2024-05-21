@@ -1,16 +1,37 @@
 version: '3.8'
 
 services:
-  app:
+
+#  app:
+#    build:
+#      context: .
+#      dockerfile: docker/Dockerfile
+#    ports:
+#      - "8000:8000"
+#    environment:
+#      - API_KEY=token
+#      - FROM_EMAIL=email
+#      - FROM_PASSWORD=senha
+#      - SMTP_SERVER=smtp.gmail.com
+#      - SMTP_PORT=587
+#      - MONGODB_URI=mongodb://mongo:27017/
+#      - AWS_ACCESS_KEY_ID=test
+#      - AWS_SECRET_ACCESS_KEY=test
+#      - AWS_DEFAULT_REGION=us-east-1
+#      - LOCALSTACK_ENDPOINT=http://localstack:4566
+#    depends_on:
+#      - mongo
+#      - localstack
+
+  sqs_consumer:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    ports:
-      - "8000:8000"
+    command: python -m src.consumers.sqs_consumer
     environment:
       - API_KEY=token
       - FROM_EMAIL=email
-      - FROM_PASSWORD=password
+      - FROM_PASSWORD=senha
       - SMTP_SERVER=smtp.gmail.com
       - SMTP_PORT=587
       - MONGODB_URI=mongodb://mongo:27017/
@@ -21,27 +42,6 @@ services:
     depends_on:
       - mongo
       - localstack
-
-#  sqs_consumer:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#    command: python -m app.sqs_consumer
-#    environment:
-#      - API_KEY=your_openai_api_key
-#      - FROM_EMAIL=your_email@example.com
-#      - FROM_PASSWORD=your_email_password
-#      - SMTP_SERVER=smtp.gmail.com
-#      - SMTP_PORT=587
-#      - MONGODB_URI=mongodb://mongo:27017/
-#      - AWS_ACCESS_KEY_ID=test
-#      - AWS_SECRET_ACCESS_KEY=test
-#      - AWS_DEFAULT_REGION=us-east-1
-#      - LOCALSTACK_ENDPOINT=http://localstack:4566
-#      - SQS_QUEUE_URL=http://localstack:4566/000000000000/transcription-queue
-#    depends_on:
-#      - mongo
-#      - localstack
 
   mongo:
     image: mongo:6.0
@@ -55,6 +55,7 @@ services:
     ports:
       - "4566:4566"
       - "4571:4571"
+    command: awslocal sqs create-queue --queue-name transcription-queue
     environment:
       - SERVICES=s3,sqs
       - DEFAULT_REGION=us-east-1
