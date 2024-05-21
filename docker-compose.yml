@@ -9,8 +9,8 @@ services:
       - "8000:8000"
     environment:
       - API_KEY=token
-      - FROM_EMAIL=email@gmail.com
-      - FROM_PASSWORD=senha
+      - FROM_EMAIL=email
+      - FROM_PASSWORD=password
       - SMTP_SERVER=smtp.gmail.com
       - SMTP_PORT=587
       - MONGODB_URI=mongodb://mongo:27017/
@@ -25,7 +25,7 @@ services:
 #  sqs_consumer:
 #    build:
 #      context: .
-#      dockerfile: docker/Dockerfile
+#      dockerfile: Dockerfile
 #    command: python -m app.sqs_consumer
 #    environment:
 #      - API_KEY=your_openai_api_key

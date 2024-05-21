@@ -1,7 +1,7 @@
 __pycache__/
 *.pyc
-app/results/*
-app/tmp/*
+src/results/*
+src/tmp/*
 *.mp4
 *.wav
 *.mkv

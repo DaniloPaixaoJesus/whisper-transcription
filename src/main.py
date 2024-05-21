@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.controllers.transcription_controller import router as transcription_router
+from src.controllers.transcription_controller import router as transcription_router
 
 app = FastAPI()
 

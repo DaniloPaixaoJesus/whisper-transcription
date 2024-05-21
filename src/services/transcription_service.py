@@ -4,9 +4,9 @@ import os
 import uuid
 import shutil
 from openai import OpenAI
-from app.config.config import get_config
-from app.utils.email_utils import send_email
-from app.utils.download_utils import download_video
+from src.config.config import get_config
+from src.utils.email_utils import send_email
+from src.utils.download_utils import download_video
 #from app.utils.s3_utils import upload_to_s3
 #from app.utils.mongodb_utils import init_transcription, update_transcription_status
 
