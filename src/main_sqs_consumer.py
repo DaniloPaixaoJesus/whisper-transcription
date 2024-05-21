@@ -20,7 +20,14 @@ def handle_message(message, s3_client):
         download_path = os.path.join('src', unique_file_name)
         
         download_file_from_s3(s3_client, bucket_name, bucket_key, download_path)
-        process_transcription(unique_file_name, "portuguese")
+        
+        try:
+            process_transcription(unique_file_name, "portuguese")
+        finally:
+            # Ensure the local file is removed after processing
+            if os.path.exists(download_path):
+                os.remove(download_path)
+                print(f"Deleted local file: {download_path}")
         
     except json.JSONDecodeError:
         print("Error decoding JSON message")

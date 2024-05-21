@@ -52,11 +52,14 @@ docker-compose up --build
 
 transcription_app/
 │
-├── app/
+├── src/
 │   ├── __init__.py
-│   ├── main.py
+│   ├── main_sqs_consumer.py
+│   ├── main_uvicorn.py
 │   ├── files/             # Output files directory
 │   ├── tmp/               # Temporary files directory
+│   ├── aws/
+│   │   └── aws_utils.py
 │   ├── config/
 │   │   ├── __init__.py
 │   │   └── config.py
@@ -73,8 +76,6 @@ transcription_app/
 │   └── utils/
 │       ├── __init__.py
 │       ├── email_utils.py
-│       ├── download_utils.py
-│       ├── s3_utils.py
 │       └── mongodb_utils.py
 │
 ├── tests/
