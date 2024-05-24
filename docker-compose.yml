@@ -50,30 +50,32 @@ services:
 #    volumes:
 #      - mongo_data:/data/db
 
+#  lambda:
+#    build:
+#      dockerfile: ./lambda/Dockerfile
+#    container_name: lambda
+#    environment:
+#      - SNS_TOPIC_ARN=arn:aws:sns:us-east-1:000000000000:transcription-topic
+#    volumes:
+#      - ./:/var/task/
+#    depends_on:
+#      - localstack
+#    command: ["lambda_function.lambda_handler"]
+    
   localstack:
     image: localstack/localstack:3.0.0
     ports:
       - "4566:4566"
       - "4571:4571"
     environment:
-      - SERVICES=s3,sqs
+      - SERVICES=s3,sqs,sns,lambda
       - DEFAULT_REGION=us-east-1
+    entrypoint: /bin/bash -c "docker-entrypoint.sh & /docker-entrypoint-initaws.d/setup.sh && tail -f /dev/null"
     volumes:
-      - ./teste.mkv:/teste.mkv
       - localstack_data:/var/lib/localstack
-    entrypoint:
-      - /bin/bash
-      - -c
-      - |
-        docker-entrypoint.sh &
-        until awslocal s3 mb s3://transcription-bucket; do
-          echo "Waiting for LocalStack to be ready..."
-          sleep 2
-        done
-        awslocal s3api put-object --bucket transcription-bucket --key teste.mkv --body /teste.mkv
-        awslocal sqs create-queue --queue-name transcription-queue
-        awslocal sqs send-message --queue-url http://localhost:4566/000000000000/transcription-queue --message-body '{"id":"a3b23f64-46f0-45c8-a62f-d1e9476a1ce2", "file-name":"teste.mkv", "bucket-name": "transcription-bucket", "bucket-key": "teste.mkv"}'
-        wait
+      - ./lambda:/lambda
+      - ./localstack:/docker-entrypoint-initaws.d
+      - /var/run/docker.sock:/var/run/docker.sock
 
 volumes:
   mongo_data:

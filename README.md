@@ -49,43 +49,5 @@ docker run -d -p 8000:8000 --name transcription-app \
 
 docker-compose up --build
 
+awslocal sqs send-message --queue-url http://localhost:4566/000000000000/transcription-queue --message-body '{"id":"a3b23f64-46f0-45c8-a62f-d1e9476a1ce2", "file-name":"teste.mkv", "bucket-name": "transcription-bucket", "bucket-key": "teste.mkv"}'
 
-transcription_app/
-│
-├── src/
-│   ├── __init__.py
-│   ├── main_sqs_consumer.py
-│   ├── main_uvicorn.py
-│   ├── files/             # Output files directory
-│   ├── tmp/               # Temporary files directory
-│   ├── aws/
-│   │   └── aws_utils.py
-│   ├── config/
-│   │   ├── __init__.py
-│   │   └── config.py
-│   ├── controllers/
-│   │   ├── __init__.py
-│   │   └── transcription_controller.py
-│   ├── services/
-│   │   ├── __init__.py
-│   │   └── transcription_service.py
-│   ├── models/
-│   │   ├── __init__.py
-│   │   ├── transcription_request.py
-│   │   └── transcription_response.py
-│   └── utils/
-│       ├── __init__.py
-│       ├── email_utils.py
-│       └── mongodb_utils.py
-│
-├── tests/
-│   ├── __init__.py
-│   ├── test_transcription_service.py
-│   └── test_transcription_controller.py
-│
-├── docker/
-│   └── Dockerfile
-│
-├── docker-compose.yml     # Docker Compose configuration file
-├── requirements.txt
-└── README.md
