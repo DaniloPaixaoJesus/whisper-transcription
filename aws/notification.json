@@ -1,0 +1,19 @@
+{
+    "LambdaFunctionConfigurations": [
+      {
+        "LambdaFunctionArn": "arn:aws:lambda:us-east-1:381491951305:function:receiveVideoFile",
+        "Events": ["s3:ObjectCreated:*"],
+        "Filter": {
+          "Key": {
+            "FilterRules": [
+              {
+                "Name": "prefix",
+                "Value": "video-download-from-front-end/"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+  
