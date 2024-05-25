@@ -62,7 +62,7 @@ def consume_messages(queue_url, sqs_client, s3_client):
             print("Message deleted.")
 
 if __name__ == "__main__":
-    provider = os.getenv('PROVIDER', 'localstack')
+    provider = os.getenv('PROVIDER', None)
     queue_name = os.getenv('QUEUE_NAME', 'transcription-queue')
     aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID', None)
     aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY', None)
