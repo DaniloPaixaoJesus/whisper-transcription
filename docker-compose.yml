@@ -44,25 +44,27 @@ services:
       timeout: 5s
       retries: 5
 
-  sqs_consumer:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
-    command: ["sh", "-c", "while ! curl -sf http://localhost:4566/health; do echo 'Aguardando o LocalStack...'; sleep 5; done; python -m src.main_sqs_consumer"]
-    environment:
-      - API_KEY=token
-      - FROM_EMAIL=email
-      - FROM_PASSWORD=senha
-      - SMTP_SERVER=smtp.gmail.com
-      - SMTP_PORT=587
-      - MONGODB_URI=mongodb://mongo:27017/
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
-      - AWS_DEFAULT_REGION=us-east-1
-      - LOCALSTACK_ENDPOINT=http://localhost:4566
-    depends_on:
-      localstack:
-        condition: service_healthy
+  #VERIFICAR PORQUE NAO CONSEGUE ACESSAR O  LOCALHOST:4566
+  #FUNCIONA APENAS RODANDO FORA DO DOCKER, ACESSANDO APENAS O LOCALSTACK "POR FORA", MESMO COM AS TENTATIVAS DE TIMEOUT
+  #sqs_consumer:
+  #  build:
+  #    context: .
+  #    dockerfile: docker/Dockerfile
+  #  command: ["sh", "-c", "while ! curl -sf http://localhost:4566/health; do echo 'Aguardando o LocalStack...'; sleep 5; done; python -m src.main_sqs_consumer"]
+  #  environment:
+  #    - API_KEY=token
+  #    - FROM_EMAIL=email
+  #    - FROM_PASSWORD=senha
+  #    - SMTP_SERVER=smtp.gmail.com
+  #    - SMTP_PORT=587
+  #    - MONGODB_URI=mongodb://mongo:27017/
+  #    - AWS_ACCESS_KEY_ID=test
+  #    - AWS_SECRET_ACCESS_KEY=test
+  #    - AWS_DEFAULT_REGION=us-east-1
+  #    - LOCALSTACK_ENDPOINT=http://localhost:4566
+  #  depends_on:
+  #    localstack:
+  #      condition: service_healthy
 
 volumes:
   #mongo_data:

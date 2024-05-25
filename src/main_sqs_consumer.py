@@ -6,17 +6,24 @@ from src.services.transcription_service import process_transcription
 def handle_message(message, s3_client):
     body = message['Body']
     try:
-        message_data = json.loads(body)
-        file_name = message_data.get('file-name')
-        bucket_name = message_data.get('bucket-name')
-        bucket_key = message_data.get('bucket-key')
-        msg_id = message_data.get('id')
+        message_data_detail = json.loads(body)
+        message_data = json.loads(message_data_detail['Message'])
+
+        print(f'Receiving message: {message_data}')
+        print('-------------------------------------')
         
-        if not all([file_name, bucket_name, bucket_key, msg_id]):
-            print("Missing required fields in message")
-            return
+        # Verificando todos os campos da mensagem
+        for key in ['file-name', 'bucket-name', 'bucket-key', 'transaction-id']:
+            if key not in message_data:
+                print(f"Missing required field: {key} in message: {message_data}")
+                return
         
-        unique_file_name = f"{os.path.splitext(file_name)[0]}_{msg_id}{os.path.splitext(file_name)[1]}"
+        file_name = message_data['file-name']
+        bucket_name = message_data['bucket-name']
+        bucket_key = message_data['bucket-key']
+        transaction_id = message_data['transaction-id']
+
+        unique_file_name = f"{os.path.splitext(file_name)[0]}_{transaction_id}{os.path.splitext(file_name)[1]}"
         download_path = os.path.join('src', unique_file_name)
         
         download_file_from_s3(s3_client, bucket_name, bucket_key, download_path)
@@ -29,8 +36,8 @@ def handle_message(message, s3_client):
                 os.remove(download_path)
                 print(f"Deleted local file: {download_path}")
         
-    except json.JSONDecodeError:
-        print("Error decoding JSON message")
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON message: {e}")
 
 def consume_messages(queue_url, sqs_client, s3_client):
     while True:
