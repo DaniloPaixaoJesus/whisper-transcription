@@ -2,12 +2,11 @@
 
 # Espera a inicialização do LocalStack
 echo "Esperando o LocalStack iniciar..."
-sleep 10
+#sleep 10
 
-# Cria fila SQS
-echo "Criando o bucket S3..."
+# Cria a fila SQS
+echo "Criando a fila SQS..."
 awslocal sqs create-queue --queue-name transcription-queue
-
 
 # Cria o bucket S3
 echo "Criando o bucket S3..."
@@ -32,7 +31,6 @@ awslocal sns create-topic --name transcription-topic
 
 # Empacota a função Lambda
 echo "Empacotando a função Lambda..."
-#zip /lambda/lambda_function.zip /lambda/lambda_function.py -criando o zip errado - dentro esta/lambda/lambda_function.py
 cd /lambda
 zip -r lambda_function.zip lambda_function.py
 
@@ -58,8 +56,13 @@ awslocal lambda add-permission --function-name receiveVideoFile --principal s3.a
 echo "Configurando a notificação do bucket S3..."
 awslocal s3api put-bucket-notification-configuration --bucket transcription-bucket --notification-configuration file:///docker-entrypoint-initaws.d/notification.json
 
+# Inscrever a fila SQS no tópico SNS
+echo "Inscrevendo a fila SQS no tópico SNS..."
+QUEUE_ARN=$(awslocal sqs get-queue-attributes --queue-url http://localhost:4566/000000000000/transcription-queue --attribute-names QueueArn | grep QueueArn | awk -F'"' '{print $4}')
+awslocal sns subscribe --topic-arn arn:aws:sns:us-east-1:000000000000:transcription-topic --protocol sqs --notification-endpoint $QUEUE_ARN
+
 if [ $? -ne 0 ]; then
-  echo "Erro ao configurar a notificação do bucket S3."
+  echo "Erro ao configurar a inscrição da fila no tópico SNS."
   exit 1
 fi
 

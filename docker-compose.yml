@@ -23,45 +23,6 @@ services:
 #      - mongo
 #      - localstack
 
-#  sqs_consumer:
-#    build:
-#      context: .
-#      dockerfile: docker/Dockerfile
-#    command: python -m src.main_sqs_consumer
-#    environment:
-#      - API_KEY=token
-#      - FROM_EMAIL=email
-#      - FROM_PASSWORD=senha
-#      - SMTP_SERVER=smtp.gmail.com
-#      - SMTP_PORT=587
-#      - MONGODB_URI=mongodb://mongo:27017/
-#      - AWS_ACCESS_KEY_ID=test
-#      - AWS_SECRET_ACCESS_KEY=test
-#      - AWS_DEFAULT_REGION=us-east-1
-#      - LOCALSTACK_ENDPOINT=http://localstack:4566
-#    depends_on:
-#      - mongo
-#      - localstack
-
-#  mongo:
-#    image: mongo:6.0
-#    ports:
-#      - "27017:27017"
-#    volumes:
-#      - mongo_data:/data/db
-
-#  lambda:
-#    build:
-#      dockerfile: ./lambda/Dockerfile
-#    container_name: lambda
-#    environment:
-#      - SNS_TOPIC_ARN=arn:aws:sns:us-east-1:000000000000:transcription-topic
-#    volumes:
-#      - ./:/var/task/
-#    depends_on:
-#      - localstack
-#    command: ["lambda_function.lambda_handler"]
-    
   localstack:
     image: localstack/localstack:3.0.0
     ports:
@@ -70,13 +31,39 @@ services:
     environment:
       - SERVICES=s3,sqs,sns,lambda
       - DEFAULT_REGION=us-east-1
+      - SNS_TOPIC_ARN=arn:aws:sns:us-east-1:000000000000:transcription-topic
     entrypoint: /bin/bash -c "docker-entrypoint.sh & /docker-entrypoint-initaws.d/setup.sh && tail -f /dev/null"
     volumes:
       - localstack_data:/var/lib/localstack
       - ./lambda:/lambda
       - ./localstack:/docker-entrypoint-initaws.d
       - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  sqs_consumer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: ["sh", "-c", "while ! curl -sf http://localhost:4566/health; do echo 'Aguardando o LocalStack...'; sleep 5; done; python -m src.main_sqs_consumer"]
+    environment:
+      - API_KEY=token
+      - FROM_EMAIL=email
+      - FROM_PASSWORD=senha
+      - SMTP_SERVER=smtp.gmail.com
+      - SMTP_PORT=587
+      - MONGODB_URI=mongodb://mongo:27017/
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+      - LOCALSTACK_ENDPOINT=http://localhost:4566
+    depends_on:
+      localstack:
+        condition: service_healthy
 
 volumes:
-  mongo_data:
+  #mongo_data:
   localstack_data:

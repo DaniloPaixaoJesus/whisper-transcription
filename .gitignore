@@ -5,3 +5,4 @@ src/tmp/*
 *.mp4
 *.wav
 *.mkv
+lambda/lambda_function.zip
