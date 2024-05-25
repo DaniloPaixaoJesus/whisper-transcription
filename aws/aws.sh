@@ -46,4 +46,4 @@ aws lambda wait function-active-v2 --function-name receiveVideoFile
 
 aws lambda add-permission --function-name receiveVideoFile --principal s3.amazonaws.com --statement-id some-unique-id --action "lambda:InvokeFunction" --source-arn arn:aws:s3:::app-transcription-bucket --source-account 000000000000
 
-aws s3api put-bucket-notification-configuration --bucket app-transcription-bucket --notification-configuration file:////home/ec2-user/py-projects/whisper-transcription/localstack/notification.json
+aws s3api put-bucket-notification-configuration --bucket app-transcription-bucket --notification-configuration file:////home/ec2-user/py-projects/whisper-transcription/aws/notification.json

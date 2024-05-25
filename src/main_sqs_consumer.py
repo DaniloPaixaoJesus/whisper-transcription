@@ -64,8 +64,8 @@ def consume_messages(queue_url, sqs_client, s3_client):
 if __name__ == "__main__":
     provider = os.getenv('PROVIDER', 'localstack')
     queue_name = os.getenv('QUEUE_NAME', 'transcription-queue')
-    aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID', 'test')
-    aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY', 'test')
+    aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID', None)
+    aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY', None)
     aws_region = os.getenv('AWS_REGION', 'us-east-1')
 
     sqs_client, s3_client = get_aws_clients(provider, aws_region, aws_access_key_id, aws_secret_access_key)
