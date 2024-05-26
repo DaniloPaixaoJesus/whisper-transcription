@@ -8,20 +8,21 @@ def handle_message(message, s3_client):
     try:
         message_data_detail = json.loads(body)
         message_data = json.loads(message_data_detail['Message'])
+        request_payload = json.loads(message_data['responsePayload'])
 
-        print(f'Receiving message: {message_data}')
+        print(f'Receiving message request_payload: {request_payload}')
         print('-------------------------------------')
         
         # Verificando todos os campos da mensagem
         for key in ['file-name', 'bucket-name', 'bucket-key', 'transaction-id']:
-            if key not in message_data:
-                print(f"Missing required field: {key} in message: {message_data}")
+            if key not in request_payload:
+                print(f"Missing required field: {key} in request_payload: {request_payload}")
                 return
         
-        file_name = message_data['file-name']
-        bucket_name = message_data['bucket-name']
-        bucket_key = message_data['bucket-key']
-        transaction_id = message_data['transaction-id']
+        file_name = request_payload['file-name']
+        bucket_name = request_payload['bucket-name']
+        bucket_key = request_payload['bucket-key']
+        transaction_id = request_payload['transaction-id']
 
         unique_file_name = f"{os.path.splitext(file_name)[0]}_{transaction_id}{os.path.splitext(file_name)[1]}"
         download_path = os.path.join('src', unique_file_name)
@@ -62,10 +63,10 @@ def consume_messages(queue_url, sqs_client, s3_client):
             print("Message deleted.")
 
 if __name__ == "__main__":
-    provider = os.getenv('PROVIDER', None)
+    provider = os.getenv('PROVIDER', 'localstack')
     queue_name = os.getenv('QUEUE_NAME', 'transcription-queue')
-    aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID', None)
-    aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY', None)
+    aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID', 'test')
+    aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY', 'test')
     aws_region = os.getenv('AWS_REGION', 'us-east-1')
 
     sqs_client, s3_client = get_aws_clients(provider, aws_region, aws_access_key_id, aws_secret_access_key)
