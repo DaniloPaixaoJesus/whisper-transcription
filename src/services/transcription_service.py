@@ -140,12 +140,12 @@ def process_transcription(video_filename, language):
         print(f"Summary saved to: {summary_path}")
 
         # Upload transcription and summary to S3
-        upload_to_s3(s3_client, transcription_path, "transcription-bucket", f"full-transcriptions/{transcription_filename}")
-        upload_to_s3(s3_client, summary_path, "transcription-bucket", f"summary-transcriptions/{summary_filename}")
+        upload_to_s3(s3_client, transcription_path, "app-transcription-bucket", f"full-transcriptions/{transcription_filename}")
+        upload_to_s3(s3_client, summary_path, "app-transcription-bucket", f"summary-transcriptions/{summary_filename}")
 
         # Generate pre-signed URLs
-        transcription_url = generate_presigned_url(s3_client, "transcription-bucket", f"full-transcriptions/{transcription_filename}")
-        summary_url = generate_presigned_url(s3_client, "transcription-bucket", f"summary-transcriptions/{summary_filename}")
+        transcription_url = generate_presigned_url(s3_client, "app-transcription-bucket", f"full-transcriptions/{transcription_filename}")
+        summary_url = generate_presigned_url(s3_client, "app-transcription-bucket", f"summary-transcriptions/{summary_filename}")
 
        # Send the email with the pre-signed URLs
         email_body = f"Attached are the complete transcription and summary.\n\n" \
@@ -165,8 +165,16 @@ def process_transcription(video_filename, language):
         # update_transcription_status(unique_id, "FINISHED")
                 
     finally:
-        # Remove the temporary audio file
-        print(f"Temporary audio file {audio_path} removed.")
-        os.remove(transcription_path)
-        os.remove(summary_path)
-        os.remove(audio_path)
+        # Remove the temporary files if they exist
+        if os.path.exists(transcription_path):
+            os.remove(transcription_path)
+            print(f"Temporary transcription file {transcription_path} removed.")
+        
+        if os.path.exists(summary_path):
+            os.remove(summary_path)
+            print(f"Temporary summary file {summary_path} removed.")
+        
+        if os.path.exists(audio_path):
+            os.remove(audio_path)
+            print(f"Temporary audio file {audio_path} removed.")
+

@@ -21,15 +21,5 @@ RUN apt-get -y update
 RUN apt-get -y upgrade
 RUN apt-get install -y ffmpeg
 
-# Copy the LocalStack setup script
-# COPY docker/setup_localstack.sh /docker-entrypoint-initaws.d/
-
-# Set environment variables (replace with your actual values or pass them through the Docker run command)
-ENV API_KEY="your_openai_api_key"
-ENV FROM_EMAIL="your_email@example.com"
-ENV FROM_PASSWORD="your_password"
-ENV SMTP_SERVER="smtp.gmail.com"
-ENV SMTP_PORT=587
-
-# Command to run the application
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Execute o aplicativo
+CMD ["python3", "-m", "src.main_sqs_consumer"]

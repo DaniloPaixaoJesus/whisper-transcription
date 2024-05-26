@@ -1,71 +1,27 @@
 version: '3.8'
 
 services:
-
-#  app:
-#    build:
-#      context: .
-#      dockerfile: docker/Dockerfile
-#    ports:
-#      - "8000:8000"
-#    environment:
-#      - API_KEY=token
-#      - FROM_EMAIL=email
-#      - FROM_PASSWORD=senha
-#      - SMTP_SERVER=smtp.gmail.com
-#      - SMTP_PORT=587
-#      - MONGODB_URI=mongodb://mongo:27017/
-#      - AWS_ACCESS_KEY_ID=test
-#      - AWS_SECRET_ACCESS_KEY=test
-#      - AWS_DEFAULT_REGION=us-east-1
-#      - LOCALSTACK_ENDPOINT=http://localstack:4566
-#    depends_on:
-#      - mongo
-#      - localstack
+  sqs_consumer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    environment:
+      - AWS_ACCESS_KEY_ID=access-key
+      - AWS_SECRET_ACCESS_KEY=secret-key
+      - API_KEY=open-api-key
+      - FROM_EMAIL=email
+      - FROM_PASSWORD=password
+      - PROVIDER=aws
+      - QUEUE_NAME=transcription-queue
+      - AWS_REGION=us-east-1
+    depends_on:
+      - localstack
 
   localstack:
-    image: localstack/localstack:3.0.0
+    image: localstack/localstack
+    environment:
+      - SERVICES=s3,sqs
+      - AWS_DEFAULT_REGION=us-east-1
     ports:
       - "4566:4566"
       - "4571:4571"
-    environment:
-      - SERVICES=s3,sqs,sns,lambda
-      - DEFAULT_REGION=us-east-1
-      - SNS_TOPIC_ARN=arn:aws:sns:us-east-1:000000000000:transcription-topic
-    entrypoint: /bin/bash -c "docker-entrypoint.sh & /docker-entrypoint-initaws.d/setup.sh && tail -f /dev/null"
-    volumes:
-      - localstack_data:/var/lib/localstack
-      - ./lambda:/lambda
-      - ./localstack:/docker-entrypoint-initaws.d
-      - /var/run/docker.sock:/var/run/docker.sock
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4566/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  #VERIFICAR PORQUE NAO CONSEGUE ACESSAR O  LOCALHOST:4566
-  #FUNCIONA APENAS RODANDO FORA DO DOCKER, ACESSANDO APENAS O LOCALSTACK "POR FORA", MESMO COM AS TENTATIVAS DE TIMEOUT
-  #sqs_consumer:
-  #  build:
-  #    context: .
-  #    dockerfile: docker/Dockerfile
-  #  command: ["sh", "-c", "while ! curl -sf http://localhost:4566/health; do echo 'Aguardando o LocalStack...'; sleep 5; done; python -m src.main_sqs_consumer"]
-  #  environment:
-  #    - API_KEY=token
-  #    - FROM_EMAIL=email
-  #    - FROM_PASSWORD=senha
-  #    - SMTP_SERVER=smtp.gmail.com
-  #    - SMTP_PORT=587
-  #    - MONGODB_URI=mongodb://mongo:27017/
-  #    - AWS_ACCESS_KEY_ID=test
-  #    - AWS_SECRET_ACCESS_KEY=test
-  #    - AWS_DEFAULT_REGION=us-east-1
-  #    - LOCALSTACK_ENDPOINT=http://localhost:4566
-  #  depends_on:
-  #    localstack:
-  #      condition: service_healthy
-
-volumes:
-  #mongo_data:
-  localstack_data:
