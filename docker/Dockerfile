@@ -22,4 +22,4 @@ RUN apt-get -y upgrade
 RUN apt-get install -y ffmpeg
 
 # Execute o aplicativo
-CMD ["python3", "-m", "src.main_sqs_consumer"]
+CMD ["py", "-m", "src.main_sqs_consumer"]

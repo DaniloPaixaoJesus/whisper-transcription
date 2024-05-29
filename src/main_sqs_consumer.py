@@ -5,37 +5,40 @@ from src.services.transcription_service import process_transcription
 
 def handle_message(message, s3_client):
     body = message['Body']
+    print(f'handle_message message[body]: {body}')
     try:
         message_data_detail = json.loads(body)
-        message_data = json.loads(message_data_detail['Message'])
-        request_payload = json.loads(message_data['responsePayload'])
+        
+        if message_data_detail['Type'] == 'Notification':
+            message_data = json.loads(message_data_detail['Message'])
+            request_payload = message_data['responsePayload']
 
-        print(f'Receiving message request_payload: {request_payload}')
-        print('-------------------------------------')
-        
-        # Verificando todos os campos da mensagem
-        for key in ['file-name', 'bucket-name', 'bucket-key', 'transaction-id']:
-            if key not in request_payload:
-                print(f"Missing required field: {key} in request_payload: {request_payload}")
-                return
-        
-        file_name = request_payload['file-name']
-        bucket_name = request_payload['bucket-name']
-        bucket_key = request_payload['bucket-key']
-        transaction_id = request_payload['transaction-id']
+            print(f'Receiving message request_payload: {request_payload}')
+            print('-------------------------------------')
 
-        unique_file_name = f"{os.path.splitext(file_name)[0]}_{transaction_id}{os.path.splitext(file_name)[1]}"
-        download_path = os.path.join('src', unique_file_name)
-        
-        download_file_from_s3(s3_client, bucket_name, bucket_key, download_path)
-        
-        try:
-            process_transcription(unique_file_name, "portuguese")
-        finally:
-            # Ensure the local file is removed after processing
-            if os.path.exists(download_path):
-                os.remove(download_path)
-                print(f"Deleted local file: {download_path}")
+            # Verificando todos os campos da mensagem
+            for key in ['file-name', 'bucket-name', 'bucket-key', 'transaction-id']:
+                if key not in request_payload:
+                    print(f"Missing required field: {key} in request_payload: {request_payload}")
+                    return
+
+            file_name = request_payload['file-name']
+            bucket_name = request_payload['bucket-name']
+            bucket_key = request_payload['bucket-key']
+            transaction_id = request_payload['transaction-id']
+
+            unique_file_name = f"{os.path.splitext(file_name)[0]}_{transaction_id}{os.path.splitext(file_name)[1]}"
+            download_path = os.path.join('src', unique_file_name)
+            
+            download_file_from_s3(s3_client, bucket_name, bucket_key, download_path)
+            
+            try:
+                process_transcription(unique_file_name, "portuguese")
+            finally:
+                # Ensure the local file is removed after processing
+                if os.path.exists(download_path):
+                    os.remove(download_path)
+                    print(f"Deleted local file: {download_path}")
         
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON message: {e}")
