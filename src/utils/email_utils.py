@@ -6,7 +6,13 @@ from email.mime.base import MIMEBase
 from email import encoders
 
 def send_email(subject, body, to_email, files, config):
-    """Sends an email with the attached files."""
+    print('Sends an email with the attached files')
+    print('to_email: {to_email}')
+    print('subject: {subject}')
+    print('body: {body}')
+    print('files: {files}')
+    print('---------------------------------------------------')
+
     from_email = config['from_email']
     from_password = config['from_password']
     smtp_server = config['smtp_server']

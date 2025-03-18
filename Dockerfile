@@ -7,9 +7,10 @@ WORKDIR /app
 # Copy the requirements.txt file to the container
 COPY requirements.txt .
 
-# Install the dependencies
+# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install -U openai-whisper==20231117
+RUN pip install watchdog  # Instala o watchdog para hot reload
 
 # Copy the entire project to the container
 COPY . .
@@ -21,5 +22,5 @@ RUN apt-get -y update
 RUN apt-get -y upgrade
 RUN apt-get install -y ffmpeg
 
-# Execute o aplicativo
-CMD ["python3", "-m", "src.main_sqs_consumer"]
+# Comando para rodar a aplicação com hot reload
+CMD ["watchmedo", "auto-restart", "--pattern=*.py", "--recursive", "--", "python3", "-m", "src.main_sqs_consumer"]

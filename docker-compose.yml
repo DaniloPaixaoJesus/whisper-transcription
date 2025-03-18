@@ -14,10 +14,13 @@ services:
       - PROVIDER=localstack #localstack #aws
       - QUEUE_NAME=transcription-queue
       - AWS_REGION=us-east-1
+    volumes:
+      - .:/app  # Monta o código fonte no container
     depends_on:
       - localstack
     networks:
       - localstack-network
+    command: ["watchmedo", "auto-restart", "--pattern=*.py", "--recursive", "--", "python3", "-m", "src.main_sqs_consumer"]
 
   localstack:
     image: localstack/localstack

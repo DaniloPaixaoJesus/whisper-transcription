@@ -4,6 +4,7 @@ from src.aws.aws_utils import create_boto3_client, get_queue_url, download_file_
 from src.services.transcription_service import process_transcription
 
 def handle_message(message, s3_client):
+    print(f'-----------------------------------------------')
     print(f'Receiving message from queue: {message}')
     body = message['Body']
     print(f'handle_message message[body]: {body}')
