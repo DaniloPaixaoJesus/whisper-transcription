@@ -4,6 +4,7 @@ from src.aws.aws_utils import create_boto3_client, get_queue_url, download_file_
 from src.services.transcription_service import process_transcription
 
 def handle_message(message, s3_client):
+    print(f'Receiving message from queue: {message}')
     body = message['Body']
     print(f'handle_message message[body]: {body}')
     try:
@@ -11,7 +12,7 @@ def handle_message(message, s3_client):
         
         if message_data_detail['Type'] == 'Notification':
             message_data = json.loads(message_data_detail['Message'])
-            request_payload = message_data['responsePayload']
+            request_payload = message_data #message_data['responsePayload']
 
             print(f'Receiving message request_payload: {request_payload}')
             print('-------------------------------------')

@@ -19,6 +19,7 @@ def create_boto3_client(service_name, endpoint_url=None, region_name='us-east-1'
         )
 
 def get_queue_url(sqs_client, queue_name):
+    print(f"Procurando queue {queue_name}")
     response = sqs_client.get_queue_url(QueueName=queue_name)
     return response['QueueUrl']
 
@@ -27,7 +28,7 @@ def download_file_from_s3(s3_client, bucket_name, bucket_key, download_path):
     print(f"Downloaded {bucket_key} from bucket {bucket_name} to {download_path}")
 
 def get_aws_clients(provider, region, access_key, secret_key):
-    endpoint_url = 'http://localhost:4566' if provider == 'localstack' else None
+    endpoint_url = 'http://localstack:4566' if provider == 'localstack' else None
 
     sqs_client = create_boto3_client(
         'sqs',
