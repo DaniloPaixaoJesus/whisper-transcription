@@ -72,7 +72,7 @@ whisper-transcription/
 ### 📌 Upload de um arquivo para o S3
 
 ```sh
-aws --endpoint-url=http://localhost:4566 s3 cp exemplo.mp4 s3://transcription-bucket/video-download-from-front-end/
+aws --endpoint-url=http://localhost:4566 s3 cp exemplo.m4a s3://transcription-bucket/video-download-from-front-end/
 ```
 
 ### 📌 Listar objetos no bucket
@@ -87,7 +87,7 @@ aws --endpoint-url=http://localhost:4566 s3api list-objects --bucket transcripti
 aws --endpoint-url=http://localhost:4566 sns publish     --topic-arn arn:aws:sns:us-east-1:000000000000:transcription-topic     --message '{
         "bucket-name": "transcription-bucket",
         "bucket-key": "video-download-from-front-end/exemplo.mp4",
-        "file-name": "exemplo.mp4",
+        "file-name": "exemplo.m4a",
         "size": 12345,
         "event-time": "2025-03-18T12:00:00Z",
         "transaction-id": "123e4567-e89b-12d3-a456-426614174000"

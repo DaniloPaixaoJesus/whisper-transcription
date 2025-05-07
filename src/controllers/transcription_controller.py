@@ -1,19 +1,29 @@
-from fastapi import APIRouter, BackgroundTasks
-from src.services.transcription_service import process_transcription
-from src.models.transcription_request import TranscriptionRequest
-from src.models.transcription_response import TranscriptionResponse
+from fastapi import APIRouter, UploadFile, File, BackgroundTasks
+from fastapi.responses import JSONResponse
+import os
 import uuid
+from src.services.transcription_service import process_transcription
 
-router = APIRouter()
+router = APIRouter(prefix="/transcription")
 
-@router.post("/transcription", response_model=TranscriptionResponse, status_code=202)
-async def transcription(request: TranscriptionRequest, background_tasks: BackgroundTasks):
-    task_id = str(uuid.uuid4())
-    background_tasks.add_task(process_transcription, request.video_filename, request.language)
-    return TranscriptionResponse(task_id=task_id)
+@router.post("/upload")
+async def upload_file(file: UploadFile = File(...), background_tasks: BackgroundTasks = BackgroundTasks()):
+    tmp_dir = os.path.join("src", "tmp")
+    os.makedirs(tmp_dir, exist_ok=True)
 
-"""@router.post("/transcription_from_url", response_model=TranscriptionResponse, status_code=202)
-async def transcription_from_url(url: str, language: str, background_tasks: BackgroundTasks):
-    task_id = str(uuid.uuid4())
-    background_tasks.add_task(process_transcription_from_url, url, language)
-    return TranscriptionResponse(task_id=task_id)"""
+    # Gera nome único para evitar conflitos simultâneos
+    unique_filename = f"{uuid.uuid4()}_{file.filename}"
+    temp_file_path = os.path.join(tmp_dir, unique_filename)
+
+    # Salva o arquivo
+    with open(temp_file_path, "wb") as f:
+        f.write(await file.read())
+
+    # Agendamento do processamento em segundo plano
+    background_tasks.add_task(process_transcription, temp_file_path, "portuguese")
+
+    # Retorna 202 Accepted
+    return JSONResponse(
+        status_code=202,
+        content={"message": "Arquivo recebido. A transcrição será processada em segundo plano."}
+    )
