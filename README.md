@@ -17,7 +17,7 @@ Crie a rede externa no Docker para compartilhar recursos do LocalStack entre dif
 docker network create localstack-network
 ```
 
-Antes de iniciar o LocalStack, configure as credenciais de teste:
+Antes de iniciar o LocalStack, configure as credenciais de teste: 
 
 ```sh
 aws configure set aws_access_key_id test
