@@ -1,107 +1,111 @@
 # Whisper Transcription
 
-Whisper Transcription é uma aplicação para transcrição de vídeos, permitindo upload de arquivos ou fornecimento de URLs para processamento. O resultado é enviado por e-mail e armazenado em um bucket S3.
+Whisper Transcription é uma aplicação em Python com FastAPI que permite **transcrever áudios a partir de vídeos enviados via upload**. A transcrição é processada em **segundo plano** e armazenada localmente na pasta `src/results`.
 
-## 📌 Requisitos
+## ✅ Funcionalidades
 
-- **Docker** e **Docker Compose**
-- **AWS CLI** instalado
-- **LocalStack** configurado corretamente
-- **Python 3.9+**
+- Upload de arquivos de vídeo para transcrição
+- Extração de áudio com FFmpeg
+- Transcrição automática usando OpenAI Whisper
+- Processamento assíncrono (retorna HTTP 202 Accepted)
+- Geração do arquivo `.txt` com o conteúdo transcrito
+- Código simples, sem dependência de mensageria ou serviços externos
 
-## 🔧 Configuração
+---
 
-Crie a rede externa no Docker para compartilhar recursos do LocalStack entre diferentes projetos:
-
-```sh
-docker network create localstack-network
-```
-
-Antes de iniciar o LocalStack, configure as credenciais de teste:
-
-```sh
-aws configure set aws_access_key_id test
-aws configure set aws_secret_access_key test
-aws configure set region us-east-1
-```
-
-Garanta que o **arquivo `setup-localstack.sh` tenha permissão de execução**:
-
-```sh
-chmod +x setup-localstack.sh
-```
-
-## 🚀 Executando o Projeto
-
-Para rodar o ambiente utilizando Docker Compose:
-
-```sh
-docker-compose up --build
-```
-
-## 🛠️ Funcionalidades
-
-- Transcrição de áudio de vídeos utilizando Whisper AI.
-- Resumo das transcrições via OpenAI GPT-4.
-- Upload de arquivos de vídeo ou fornecimento de URLs.
-- Envio dos resultados por e-mail.
-- Integração com AWS S3 e SQS via LocalStack.
-
-## 📂 Estrutura do Projeto
+## 📁 Estrutura Atual do Projeto
 
 ```
 whisper-transcription/
-│── src/
-│   ├── aws/                    # Integração com AWS (S3, SQS)
-│   ├── config/                 # Configuração do projeto
-│   ├── controllers/            # Controladores de API
-│   ├── models/                 # Modelos de requisição e resposta
-│   ├── services/               # Lógica de transcrição
-│   ├── utils/                  # Utilitários (download, email, etc.)
-│   ├── main_sqs_consumer.py    # Consumidor da fila SQS
-│   ├── main_uvicorn.py         # Servidor FastAPI
-│── setup-localstack.sh         # Script de inicialização do LocalStack
-│── docker-compose.yml          # Configuração dos serviços Docker
-│── Dockerfile                  # Configuração do container da aplicação
-│── requirements.txt            # Dependências do projeto
-│── README.md                   # Documentação do projeto
+├── src/
+│   ├── controllers/             # Endpoints da API (FastAPI)
+│   ├── services/                # Lógica de transcrição e utilitários
+│   ├── main_uvicorn.py         # Inicialização do FastAPI
+│   └── tmp/                    # Arquivos temporários
+│   └── results/                # Resultados das transcrições geradas
+├── requirements.txt            # Dependências do projeto
+├── Dockerfile                  # Docker da aplicação
+├── docker-compose.yml          # Orquestração do container
+└── README.md                   # Este documento
 ```
 
-## 📝 Testando Funcionalidades via AWS CLI
+---
 
-### 📌 Upload de um arquivo para o S3
+## 🚀 Como Executar
 
-```sh
-aws --endpoint-url=http://localhost:4566 s3 cp exemplo.m4a s3://transcription-bucket/video-download-from-front-end/
+### Pré-requisitos
+
+- Docker + Docker Compose
+- Python 3.9+ (caso deseje rodar fora do container)
+- FFmpeg instalado no container (já incluso no Dockerfile)
+
+### Subindo com Docker
+
+```bash
+docker-compose up --build
 ```
 
-### 📌 Listar objetos no bucket
+A aplicação ficará acessível em:  
+📡 `http://localhost:8000`
 
-```sh
-aws --endpoint-url=http://localhost:4566 s3api list-objects --bucket transcription-bucket --output json
+---
+
+## 🧪 Como Testar
+
+### Via `curl` (linha de comando)
+
+```bash
+curl --location 'http://localhost:8000/transcription/upload' \
+--form 'file=@"caminho/do/seu/video.mp4"'
 ```
 
-### 📌 Publicar uma mensagem no tópico SNS
+📨 A resposta será:
 
-```sh
-aws --endpoint-url=http://localhost:4566 sns publish     --topic-arn arn:aws:sns:us-east-1:000000000000:transcription-topic     --message '{
-        "bucket-name": "transcription-bucket",
-        "bucket-key": "video-download-from-front-end/exemplo.mp4",
-        "file-name": "exemplo.m4a",
-        "size": 12345,
-        "event-time": "2025-03-18T12:00:00Z",
-        "transaction-id": "123e4567-e89b-12d3-a456-426614174000"
-    }'     --subject "Novo Arquivo Recebido"
+```json
+{
+  "message": "Arquivo recebido. A transcrição será processada em segundo plano."
+}
 ```
 
-### 📌 Purgar mensagens da fila SQS
+📂 Após o processamento, o arquivo `.txt` estará em:
 
-```sh
-aws --endpoint-url=http://localhost:4566 sqs purge-queue     --queue-url http://localhost:4566/000000000000/transcription-queue
+```
+src/results/NOME_DO_VIDEO_transcription_UUID.txt
 ```
 
-### 📌 Enviar mensagem para a fila SQS manualmente
+---
 
-```sh
-aws --endpoint-url=http://localhost:4566 sqs send-message     --queue-url http://localhost:4566/000000000000/transcription-queue     --message-body '{ "file-name": "test.mp4", "bucket-name": "transcription-bucket", "bucket-key": "video-download-from-front-end/exemplo.mp4", "transaction-id": "123e4567-e89b-12d3-a456-426614174000" }'
+## 📦 Instalação manual (sem Docker)
+
+> Recomendado apenas para testes locais
+
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn src.main_uvicorn:app --reload
 ```
+
+---
+
+## ❌ O que foi removido
+
+- Integração com AWS (S3, SNS, SQS)
+- Dependência do LocalStack
+- Envio de e-mail com links
+- Resumo com GPT-4
+
+---
+
+## ✨ To Do (opcional)
+
+- Adicionar barra de progresso
+- Interface web com upload
+- Persistência em banco (SQLite ou Mongo)
+- Monitoramento do status das transcrições
+
+---
+
+## 📄 Licença
+
+Este projeto é livre para fins educacionais e pode ser customizado à vontade.
