@@ -1,6 +1,7 @@
 import os
 import uuid
 import subprocess
+import datetime
 import whisper
 
 def extract_audio(video_path, audio_path):
@@ -12,11 +13,24 @@ def extract_audio(video_path, audio_path):
         "ffmpeg", "-i", video_path, "-q:a", "0", "-map", "a", audio_path, "-y"
     ], check=True)
 
+def format_timestamp(seconds):
+    """Converte segundos em hh:mm:ss."""
+    return str(datetime.timedelta(seconds=int(seconds))).rjust(8, "0")
+
 def transcribe_audio(audio_path, language):
-    """Transcreve o áudio usando Whisper."""
+    """Transcreve o áudio com Whisper, incluindo timestamps formatados."""
     model = whisper.load_model("base")
     result = model.transcribe(audio_path, language=language)
-    return "\n\n".join(segment['text'] for segment in result['segments'])
+
+    lines = []
+    for segment in result['segments']:
+        start = format_timestamp(segment['start'])
+        end = format_timestamp(segment['end'])
+        text = segment['text']
+        lines.append(f"[{start} - {end}] {text}")
+
+    return "\n\n".join(lines)
+
 
 def save_file(text, path):
     """Salva o texto da transcrição em arquivo."""
